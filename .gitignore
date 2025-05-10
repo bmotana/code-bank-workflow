@@ -1,0 +1,10 @@
+/tests
+.pyc
+__pycache__
+.env
+.venv
+*.log
+.idea
+.default_config.yaml
+.flake8
+/code_bank_workflow.egg-info/
