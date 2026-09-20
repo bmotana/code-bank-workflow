@@ -1,0 +1,27 @@
+[flake8]
+max-line-length = 88
+max-complexity = 10
+wemake-python-styleguide-max-methods = 5
+
+# W504: line break after binary operator
+# W503: line break before binary operator
+# ANN101: missing type annotation for self
+# ANN204: missing return type for special methods
+ignore = W504, ANN101, ANN204, W503
+
+per-file-ignores =
+    tests/*/*:ANN201,D100
+
+# D100: Missing docstring in public module
+# ANN201: Missing return type annotation for public function
+
+# Notes - How to make exceptions for specific lines - # noqa: D102
+
+exclude =
+    .git,
+    __pycache__,
+    venv,
+    .venv,
+    build,
+    dist,
+    *.egg-info

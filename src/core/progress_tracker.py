@@ -1,3 +1,7 @@
+"""Stage progression tracking."""
+
+
 class ProgressTracker:
-    """Stage progression tracking"""
+    """Stage progression tracking."""
+
     pass

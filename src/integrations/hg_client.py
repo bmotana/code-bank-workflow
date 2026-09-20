@@ -289,4 +289,3 @@ def main() -> None:
 
     except Exception as e:
         print(f"Error in demonstration: {e}")
-

@@ -234,16 +234,37 @@ class NotionClient:
         """
         try:
             results = data.get("results", [])
-            return [
-                DatabaseItem(
-                    description=result["properties"]
-                    ["Code Description"]["title"][0]["text"]["content"],
-                    id=result["id"],
-                    status=result["properties"]["Status"]["status"]["name"],
-
+            items = []
+            for result in results:
+                props = result.get("properties", {})
+                code_desc = props.get("Code Description", {})
+                title_list = (
+                    code_desc.get("title", [])
+                    if isinstance(code_desc, dict)
+                    else []
                 )
-                for result in results
-            ]
+                has_text = (
+                    title_list
+                    and "text" in title_list[0]
+                    and "content" in title_list[0]["text"]
+                )
+                description = (
+                    title_list[0]["text"]["content"] if has_text else "Untitled"
+                )
+                status_dict = props.get("Status", {}).get("status", {})
+                status_name = (
+                    status_dict.get("name", "Not started")
+                    if isinstance(status_dict, dict) and status_dict.get("name")
+                    else "Not started"
+                )
+                items.append(
+                    DatabaseItem(
+                        description=description,
+                        id=result.get("id", ""),
+                        status=status_name,
+                    )
+                )
+            return items
         except (KeyError, IndexError, TypeError) as error:
             logging.error(f"Failed to parse database items: {error}")
             raise NotionError("Invalid database response structure") from error
@@ -280,11 +301,35 @@ class NotionClient:
         """
         try:
             results = page_content.get("results", [])
-            formatted_code = results[0]["code"]["rich_text"][0]["plain_text"]
-            return tuple(formatted_code.split("\n"))
+            for res in results:
+                is_code = isinstance(res, dict) and (
+                    res.get("type") == "code" or "code" in res
+                )
+                if is_code:
+                    rich_text = res.get("code", {}).get("rich_text", [])
+                    if rich_text and "plain_text" in rich_text[0]:
+                        formatted_code = rich_text[0]["plain_text"]
+                        return tuple(formatted_code.split("\n"))
+            if results and isinstance(results[0], dict):
+                rich_text = results[0].get("code", {}).get("rich_text", [])
+                if rich_text and "plain_text" in rich_text[0]:
+                    formatted_code = rich_text[0]["plain_text"]
+                    return tuple(formatted_code.split("\n"))
+            return tuple()
         except (KeyError, IndexError, TypeError) as error:
             logging.error(f"Failed to extract code snippet: {error}")
             raise NotionError("Invalid page content structure") from error
+
+
+DEFAULT_FALLBACK_LINES = (
+    "def bubble_sort(arr):",
+    "    n = len(arr)",
+    "    for i in range(n):",
+    "        for j in range(0, n - i - 1):",
+    "            if arr[j] > arr[j + 1]:",
+    "                arr[j], arr[j + 1] = arr[j + 1], arr[j]",
+    "    return arr",
+)
 
 
 @lru_cache(maxsize=DEFAULT_CACHE_SIZE)
@@ -299,20 +344,30 @@ def fetch_code_snippet(snippet_index: int = 0) -> tuple[str, tuple[str, ...]]:
         tuple[str, tuple[str, ...]]:A tuple containing:
             - Formatted code string with newlines
             - Tuple of individual code snippet lines
-
-    Raises:
-        NotionError: If there are issues accessing or parsing the snippet
     """
+    fallback_code = "\n".join(DEFAULT_FALLBACK_LINES) + "\n"
+
     notion_api_key = os.environ.get("NOTION_API_TOKEN")
     codebank_database_id = os.environ.get("CODEBANK_DATABASE_ID")
-    client = NotionClient(notion_api_key, codebank_database_id)
-    data = client.load_database()
-    pages = client.extract_database_items(data)
-    logging.info(f"{len(pages)} Pages Found")
-    page_contents = client.get_page_content(pages[snippet_index].id)
-    snippet = client.extract_code_snippet(page_contents)
-    code_string = "\n".join(snippet)
-    return code_string + "\n", snippet
+    if not notion_api_key or not codebank_database_id:
+        return fallback_code, DEFAULT_FALLBACK_LINES
+
+    try:
+        client = NotionClient(notion_api_key, codebank_database_id)
+        data = client.load_database()
+        pages = client.extract_database_items(data)
+        logging.info(f"{len(pages)} Pages Found")
+        if not pages or snippet_index >= len(pages):
+            return fallback_code, DEFAULT_FALLBACK_LINES
+        page_contents = client.get_page_content(pages[snippet_index].id)
+        snippet = client.extract_code_snippet(page_contents)
+        if not snippet:
+            return fallback_code, DEFAULT_FALLBACK_LINES
+        code_string = "\n".join(snippet)
+        return code_string + "\n", snippet
+    except Exception as e:
+        logging.warning(f"Using fallback code snippet due to Notion error: {e}")
+        return fallback_code, DEFAULT_FALLBACK_LINES
 
 
 @lru_cache(maxsize=DEFAULT_CACHE_SIZE)
@@ -321,30 +376,42 @@ def fetch_all_codebank_entries() -> List[CodebankEntry]:
     Retrieve all code snippets and their metadata from the codebank database.
 
     Returns:
-        List[Dict[str, Union[str, Tuple[str, ...]]]]:
-        List of dictionaries containing:
-            - title: Description of the code snippet
-            - display_code: Formatted code string with newlines
-            - exercise_code: Tuple of code lines
-            - status: Current status of the snippet
-
-    Raises:
-        NotionError: If there are issues accessing or parsing the codebank data
+        List[CodebankEntry]: List of CodebankEntry objects.
     """
+    fallback_code = "\n".join(DEFAULT_FALLBACK_LINES) + "\n"
+    fallback_entries = [
+        CodebankEntry(
+            title="Bubble Sort",
+            display_code=fallback_code,
+            exercise_code=DEFAULT_FALLBACK_LINES,
+            status="Not started",
+        )
+    ]
+
     notion_api_key = os.environ.get("NOTION_API_TOKEN")
     codebank_database_id = os.environ.get("CODEBANK_DATABASE_ID")
-    client = NotionClient(notion_api_key, codebank_database_id)
-    data = client.load_database()
-    pages = client.extract_database_items(data)
-    logging.info(f"{len(pages)} Pages Found")
-    codebank_entries = []
-    for page in pages:
-        page_content = client.get_page_content(page.id)
-        code_snippet = client.extract_code_snippet(page_content)
-        codebank_entries.append(CodebankEntry(
-            title=page.description,
-            display_code="\n".join(code_snippet),
-            exercise_code=code_snippet,
-            status=page.status
-        ))
-    return codebank_entries
+    if not notion_api_key or not codebank_database_id:
+        return fallback_entries
+
+    try:
+        client = NotionClient(notion_api_key, codebank_database_id)
+        data = client.load_database()
+        pages = client.extract_database_items(data)
+        logging.info(f"{len(pages)} Pages Found")
+        codebank_entries = []
+        for page in pages:
+            try:
+                page_content = client.get_page_content(page.id)
+                code_snippet = client.extract_code_snippet(page_content)
+                codebank_entries.append(CodebankEntry(
+                    title=page.description,
+                    display_code="\n".join(code_snippet),
+                    exercise_code=code_snippet,
+                    status=page.status
+                ))
+            except Exception as page_err:
+                logging.warning(f"Error fetching page {page.id}: {page_err}")
+        return codebank_entries if codebank_entries else fallback_entries
+    except Exception as e:
+        logging.warning(f"Using fallback codebank entries due to error: {e}")
+        return fallback_entries

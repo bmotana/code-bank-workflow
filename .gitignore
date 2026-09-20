@@ -1,10 +1,57 @@
-/tests
-.pyc
-__pycache__
+# Byte-compiled / cache
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+*.egg
+*.egg-info/
+.eggs/
+dist/
+build/
+pip-wheel-metadata/
+
+# Virtual environments
+.venv/
+venv/
+ENV/
+env/
+
+# Environment / secrets
 .env
-.venv
+.env.local
+*.pem
+
+# Testing / coverage
+.pytest_cache/
+.coverage
+.coverage.*
+htmlcov/
+.tox/
+.nox/
+.mypy_cache/
+.ruff_cache/
+.hypothesis/
+coverage.xml
+*.cover
+
+# IDE / editor
+.idea/
+.vscode/
+*.swp
+*.swo
+*~
+.DS_Store
+Thumbs.db
+
+# Logs and local runtime
 *.log
-.idea
+logs/
+
+# Project-specific local overrides
 .default_config.yaml
-.flake8
-/code_bank_workflow.egg-info/
+
+# OS / misc
+*.tmp
+*.bak
+.cache/

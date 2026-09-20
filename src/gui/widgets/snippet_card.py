@@ -1,0 +1,1 @@
+"""Snippet card widget placeholder."""

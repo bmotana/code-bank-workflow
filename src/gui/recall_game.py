@@ -1,0 +1,1 @@
+"""Recall game page placeholder."""
