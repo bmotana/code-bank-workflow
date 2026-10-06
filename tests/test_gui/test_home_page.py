@@ -178,7 +178,8 @@ class TestSettingsPage(unittest.TestCase):
         self.assertEqual(self.settings_page.current_settings["font_size"], 12)
         self.assertTrue(self.settings_page.current_settings["auto_save"])
 
-    def test_reset_to_default(self):
+    @patch('tkinter.messagebox.showinfo')
+    def test_reset_to_default(self, mock_showinfo: MagicMock):
         """Verify settings reset restores default values."""
         self.settings_page.theme_var.set("dark")
         self.settings_page.font_size_var.set(18)
@@ -187,6 +188,8 @@ class TestSettingsPage(unittest.TestCase):
         self.assertEqual(self.settings_page.theme_var.get(), "light")
         self.assertEqual(self.settings_page.font_size_var.get(), 12)
         self.assertTrue(self.settings_page.auto_save_var.get())
+        mock_showinfo.assert_called_once_with(
+            "Success", "Settings reset to default values")
 
     def test_validate_settings_valid_font(self):
         """Test settings validation with valid font size input."""

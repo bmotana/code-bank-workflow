@@ -24,7 +24,7 @@ from src.integrations.notion_client \
 # for Notion API
 from src.utils.file_utils import read_yaml
 
-load_dotenv()
+load_dotenv(Path(__file__).resolve().parent.parent.parent / ".env")
 
 logging.basicConfig(level=logging.INFO)
 
