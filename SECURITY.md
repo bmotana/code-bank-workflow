@@ -8,15 +8,17 @@
 
 ## Reporting a vulnerability
 
-Please do **not** open a public GitHub issue for security problems.
+Please report security issues responsibly. To report a security vulnerability:
 
-Email the maintainer at **bmotana1@icloud.com** with:
+1. Use GitHub's **Private Vulnerability Reporting** feature via the **Security** tab of the repository to submit an advisory.
+2. Alternatively, reach out to the repository maintainers through GitHub private communications.
 
+Please include:
 - A description of the issue
 - Steps to reproduce (if possible)
 - Impact assessment
 
-You should receive an acknowledgment within a few days. Please give us reasonable time to investigate and fix before any public disclosure.
+You should receive an acknowledgment within a few business days. Please give reasonable time to investigate and address the vulnerability before public disclosure.
 
 ## Secrets
 

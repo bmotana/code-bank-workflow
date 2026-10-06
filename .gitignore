@@ -19,8 +19,11 @@ env/
 
 # Environment / secrets
 .env
-.env.local
+.env.*
+!.env.example
 *.pem
+*.key
+*.cert
 
 # Testing / coverage
 .pytest_cache/
