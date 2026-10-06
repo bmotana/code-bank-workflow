@@ -24,7 +24,14 @@
 4. Copy `.env.example` to `.env` and fill in your secrets:
 
    ```bash
+   # Linux / macOS:
    cp .env.example .env
+
+   # Windows (PowerShell):
+   Copy-Item .env.example .env
+
+   # Windows (CMD):
+   copy .env.example .env
    ```
 
 5. Review `config/default_config.yaml` for Notion URLs, model defaults, and Anki settings.
